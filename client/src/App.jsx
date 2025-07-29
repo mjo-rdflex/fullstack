@@ -1,44 +1,50 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function App() {
   const [posts, setPosts] = useState([]);
   const [title, setTitle] = useState('');
+  const API = import.meta.env.VITE_API_URL;
 
-  useEffect(() => {
-    fetch('/api/posts')
-      .then(res => res.json())
-      .then(data => setPosts(data));
-  }, []);
+  const fetchPosts = async () => {
+    const res = await fetch(`${API}/posts`);
+    const data = await res.json();
+    setPosts(data);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await fetch('/api/posts', {
+    await fetch(`${API}/posts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title })
+      body: JSON.stringify({ title }),
     });
     setTitle('');
-    const res = await fetch('/api/posts');
-    setPosts(await res.json());
+    fetchPosts();
   };
 
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Post App</h1>
+    <div style={{ maxWidth: 600, margin: 'auto', padding: 20 }}>
+      <h1>Post Creator</h1>
       <form onSubmit={handleSubmit}>
         <input
+          placeholder="Write something..."
           value={title}
-          onChange={e => setTitle(e.target.value)}
-          placeholder="Enter post title"
+          onChange={(e) => setTitle(e.target.value)}
           required
         />
         <button type="submit">Add Post</button>
       </form>
-      <ul>
-        {posts.map(p => (
-          <li key={p.id}>{p.title}</li>
-        ))}
-      </ul>
+      <hr />
+      <h2>All Posts</h2>
+      {posts.map((post) => (
+        <div key={post.id}>
+          <p>{post.title}</p>
+        </div>
+      ))}
     </div>
   );
 }
