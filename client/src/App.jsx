@@ -1,93 +1,128 @@
-// App.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
-const API_URL = 'https://fullstack-nspz.onrender.com/api/posts';
+const API_URL = "https://fullstack-nspz.onrender.com/api/posts"; 
 
-const App = () => {
-  const [title, setTitle] = useState('');
-  const [posts, setPosts] = useState([]);
+export default function App() {
+  const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({ title: "", content: "" });
 
-  const fetchPosts = async () => {
-    setLoading(true);
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
+
+  const fetchBlogs = async () => {
     try {
-      const res = await fetch(API_URL);
-      const data = await res.json();
-      setPosts(data);
+      const res = await axios.get(API_URL);
+      setBlogs(res.data);
     } catch (err) {
-      console.error('Error fetching posts:', err);
+      console.error("Error fetching blogs:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const handleChange = (e) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim()) return;
-
+    if (!form.title || !form.content) return alert("All fields required");
     try {
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title }),
-      });
-
-      if (!res.ok) throw new Error('Failed to create post');
-      const newPost = await res.json();
-      setPosts([newPost, ...posts]);
-      setTitle('');
+      await axios.post(API_URL, form);
+      setForm({ title: "", content: "" });
+      fetchBlogs();
     } catch (err) {
-      console.error('Error creating post:', err);
+      console.error("Error adding blog:", err);
     }
   };
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-xl mx-auto bg-white shadow-lg rounded-lg p-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">📝 Post Creator</h1>
+    <div style={styles.container}>
+      <h1 style={styles.header}>Simple Blog</h1>
 
-        <form onSubmit={handleSubmit} className="flex items-center space-x-3 mb-8">
-          <input
-            type="text"
-            placeholder="Write a new post..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="flex-grow px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-          <button
-            type="submit"
-            className="px-5 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition"
-          >
-            Add
-          </button>
-        </form>
+      <form onSubmit={handleSubmit} style={styles.form}>
+        <input
+          name="title"
+          value={form.title}
+          onChange={handleChange}
+          placeholder="Blog Title"
+          style={styles.input}
+        />
+        <textarea
+          name="content"
+          value={form.content}
+          onChange={handleChange}
+          placeholder="Blog Content"
+          style={{ ...styles.input, height: 80 }}
+        />
+        <button type="submit" style={styles.button}>
+          Add Blog
+        </button>
+      </form>
 
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">📚 Latest Posts</h2>
-        {loading ? (
-          <div className="text-center text-gray-500">Loading posts...</div>
-        ) : posts.length === 0 ? (
-          <div className="text-center text-gray-500">No posts found.</div>
-        ) : (
-          <ul className="space-y-3">
-            {posts.map((post) => (
-              <li
-                key={post.id}
-                className="p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition"
-              >
-                {post.title}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <hr style={{ margin: "20px 0" }} />
+
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        blogs.map((blog, idx) => (
+          <div key={idx} style={styles.blogCard}>
+            <h3>{blog.title}</h3>
+            <p>{blog.content}</p>
+          </div>
+        ))
+      )}
     </div>
   );
+}
+
+const styles = {
+  container: {
+    maxWidth: 600,
+    margin: "30px auto",
+    padding: 20,
+    fontFamily: "sans-serif",
+    background: "#f7f7f7",
+    borderRadius: 10,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+  },
+  header: {
+    textAlign: "center",
+    color: "#333",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+    marginBottom: 20,
+  },
+  input: {
+    padding: 10,
+    fontSize: 16,
+    borderRadius: 5,
+    border: "1px solid #ccc",
+  },
+  button: {
+    backgroundColor: "#007bff",
+    color: "white",
+    padding: "10px",
+    fontSize: 16,
+    border: "none",
+    borderRadius: 5,
+    cursor: "pointer",
+  },
+  blogCard: {
+    background: "#fff",
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 15,
+    boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+  },
 };
 
-export default App;
 
 
 
